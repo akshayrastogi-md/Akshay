@@ -177,4 +177,12 @@ export class PaymentResolverBase {
     }
     return result;
   }
+
+  @graphql.Mutation(() => String)
+  async FixPaymentModuleImports(
+    @graphql.Args()
+    args: string
+  ): Promise<string> {
+    return this.service.FixPaymentModuleImports(args);
+  }
 }

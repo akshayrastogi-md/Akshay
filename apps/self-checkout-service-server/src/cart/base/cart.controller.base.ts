@@ -343,4 +343,55 @@ export class CartControllerBase {
       select: { id: true },
     });
   }
+
+  @common.Post("/fix-auth-module-imports")
+  @swagger.ApiOkResponse({
+    type: String,
+  })
+  @swagger.ApiNotFoundResponse({
+    type: errors.NotFoundException,
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  async FixAuthModuleImports(
+    @common.Body()
+    body: string
+  ): Promise<string> {
+    return this.service.FixAuthModuleImports(body);
+  }
+
+  @common.Post("/fix-cart-module-imports")
+  @swagger.ApiOkResponse({
+    type: String,
+  })
+  @swagger.ApiNotFoundResponse({
+    type: errors.NotFoundException,
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  async FixCartModuleImports(
+    @common.Body()
+    body: string
+  ): Promise<string> {
+    return this.service.FixCartModuleImports(body);
+  }
+
+  @common.Post("/fix-user-module-imports")
+  @swagger.ApiOkResponse({
+    type: String,
+  })
+  @swagger.ApiNotFoundResponse({
+    type: errors.NotFoundException,
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  async FixUserModuleImports(
+    @common.Body()
+    body: string
+  ): Promise<string> {
+    return this.service.FixUserModuleImports(body);
+  }
 }

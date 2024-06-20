@@ -227,4 +227,12 @@ export class OrderResolverBase {
     }
     return result;
   }
+
+  @graphql.Mutation(() => String)
+  async FixOrderModuleImports(
+    @graphql.Args()
+    args: string
+  ): Promise<string> {
+    return this.service.FixOrderModuleImports(args);
+  }
 }

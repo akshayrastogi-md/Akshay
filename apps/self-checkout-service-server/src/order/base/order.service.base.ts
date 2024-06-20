@@ -68,4 +68,7 @@ export class OrderServiceBase {
       })
       .user();
   }
+  async FixOrderModuleImports(args: string): Promise<string> {
+    throw new Error("Not implemented");
+  }
 }

@@ -36,4 +36,13 @@ export class ProductServiceBase {
   async deleteProduct(args: Prisma.ProductDeleteArgs): Promise<PrismaProduct> {
     return this.prisma.product.delete(args);
   }
+  async FixProductModuleImports(args: string): Promise<string> {
+    throw new Error("Not implemented");
+  }
+  async RemoveDuplicateCartImports(args: string): Promise<string> {
+    throw new Error("Not implemented");
+  }
+  async RemoveDuplicatePaymentImports(args: string): Promise<string> {
+    throw new Error("Not implemented");
+  }
 }

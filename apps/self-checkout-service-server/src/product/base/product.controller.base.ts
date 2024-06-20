@@ -201,4 +201,55 @@ export class ProductControllerBase {
       throw error;
     }
   }
+
+  @common.Post("/fix-product-module-imports")
+  @swagger.ApiOkResponse({
+    type: String,
+  })
+  @swagger.ApiNotFoundResponse({
+    type: errors.NotFoundException,
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  async FixProductModuleImports(
+    @common.Body()
+    body: string
+  ): Promise<string> {
+    return this.service.FixProductModuleImports(body);
+  }
+
+  @common.Post("/remove-duplicate-cart-imports")
+  @swagger.ApiOkResponse({
+    type: String,
+  })
+  @swagger.ApiNotFoundResponse({
+    type: errors.NotFoundException,
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  async RemoveDuplicateCartImports(
+    @common.Body()
+    body: string
+  ): Promise<string> {
+    return this.service.RemoveDuplicateCartImports(body);
+  }
+
+  @common.Post("/remove-duplicate-payment-imports")
+  @swagger.ApiOkResponse({
+    type: String,
+  })
+  @swagger.ApiNotFoundResponse({
+    type: errors.NotFoundException,
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  async RemoveDuplicatePaymentImports(
+    @common.Body()
+    body: string
+  ): Promise<string> {
+    return this.service.RemoveDuplicatePaymentImports(body);
+  }
 }

@@ -189,4 +189,28 @@ export class CartResolverBase {
     }
     return result;
   }
+
+  @graphql.Mutation(() => String)
+  async FixAuthModuleImports(
+    @graphql.Args()
+    args: string
+  ): Promise<string> {
+    return this.service.FixAuthModuleImports(args);
+  }
+
+  @graphql.Mutation(() => String)
+  async FixCartModuleImports(
+    @graphql.Args()
+    args: string
+  ): Promise<string> {
+    return this.service.FixCartModuleImports(args);
+  }
+
+  @graphql.Mutation(() => String)
+  async FixUserModuleImports(
+    @graphql.Args()
+    args: string
+  ): Promise<string> {
+    return this.service.FixUserModuleImports(args);
+  }
 }

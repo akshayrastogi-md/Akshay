@@ -48,4 +48,7 @@ export class PaymentServiceBase {
       })
       .order();
   }
+  async FixPaymentModuleImports(args: string): Promise<string> {
+    throw new Error("Not implemented");
+  }
 }

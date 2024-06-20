@@ -247,4 +247,21 @@ export class PaymentControllerBase {
       throw error;
     }
   }
+
+  @common.Post("/fix-payment-module-imports")
+  @swagger.ApiOkResponse({
+    type: String,
+  })
+  @swagger.ApiNotFoundResponse({
+    type: errors.NotFoundException,
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  async FixPaymentModuleImports(
+    @common.Body()
+    body: string
+  ): Promise<string> {
+    return this.service.FixPaymentModuleImports(body);
+  }
 }

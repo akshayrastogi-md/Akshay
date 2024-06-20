@@ -141,4 +141,28 @@ export class ProductResolverBase {
       throw error;
     }
   }
+
+  @graphql.Mutation(() => String)
+  async FixProductModuleImports(
+    @graphql.Args()
+    args: string
+  ): Promise<string> {
+    return this.service.FixProductModuleImports(args);
+  }
+
+  @graphql.Mutation(() => String)
+  async RemoveDuplicateCartImports(
+    @graphql.Args()
+    args: string
+  ): Promise<string> {
+    return this.service.RemoveDuplicateCartImports(args);
+  }
+
+  @graphql.Mutation(() => String)
+  async RemoveDuplicatePaymentImports(
+    @graphql.Args()
+    args: string
+  ): Promise<string> {
+    return this.service.RemoveDuplicatePaymentImports(args);
+  }
 }
