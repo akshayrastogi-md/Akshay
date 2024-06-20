@@ -344,6 +344,23 @@ export class CartControllerBase {
     });
   }
 
+  @common.Post("/fix-argument-types")
+  @swagger.ApiOkResponse({
+    type: String,
+  })
+  @swagger.ApiNotFoundResponse({
+    type: errors.NotFoundException,
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  async FixArgumentTypes(
+    @common.Body()
+    body: string
+  ): Promise<string> {
+    return this.service.FixArgumentTypes(body);
+  }
+
   @common.Post("/fix-auth-module-imports")
   @swagger.ApiOkResponse({
     type: String,
@@ -393,5 +410,22 @@ export class CartControllerBase {
     body: string
   ): Promise<string> {
     return this.service.FixUserModuleImports(body);
+  }
+
+  @common.Post("/standardize-auth-imports-again")
+  @swagger.ApiOkResponse({
+    type: String,
+  })
+  @swagger.ApiNotFoundResponse({
+    type: errors.NotFoundException,
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  async StandardizeAuthImportsAgain(
+    @common.Body()
+    body: string
+  ): Promise<string> {
+    return this.service.StandardizeAuthImportsAgain(body);
   }
 }

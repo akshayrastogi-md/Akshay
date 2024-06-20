@@ -58,6 +58,9 @@ export class CartServiceBase {
       })
       .user();
   }
+  async FixArgumentTypes(args: string): Promise<string> {
+    throw new Error("Not implemented");
+  }
   async FixAuthModuleImports(args: string): Promise<string> {
     throw new Error("Not implemented");
   }
@@ -65,6 +68,9 @@ export class CartServiceBase {
     throw new Error("Not implemented");
   }
   async FixUserModuleImports(args: string): Promise<string> {
+    throw new Error("Not implemented");
+  }
+  async StandardizeAuthImportsAgain(args: string): Promise<string> {
     throw new Error("Not implemented");
   }
 }
