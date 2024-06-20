@@ -191,6 +191,14 @@ export class CartResolverBase {
   }
 
   @graphql.Mutation(() => String)
+  async FixArgumentTypes(
+    @graphql.Args()
+    args: string
+  ): Promise<string> {
+    return this.service.FixArgumentTypes(args);
+  }
+
+  @graphql.Mutation(() => String)
   async FixAuthModuleImports(
     @graphql.Args()
     args: string
@@ -212,5 +220,13 @@ export class CartResolverBase {
     args: string
   ): Promise<string> {
     return this.service.FixUserModuleImports(args);
+  }
+
+  @graphql.Mutation(() => String)
+  async StandardizeAuthImportsAgain(
+    @graphql.Args()
+    args: string
+  ): Promise<string> {
+    return this.service.StandardizeAuthImportsAgain(args);
   }
 }
