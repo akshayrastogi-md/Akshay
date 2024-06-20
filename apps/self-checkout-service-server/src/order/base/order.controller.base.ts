@@ -390,4 +390,21 @@ export class OrderControllerBase {
       select: { id: true },
     });
   }
+
+  @common.Post("/fix-order-module-imports")
+  @swagger.ApiOkResponse({
+    type: String,
+  })
+  @swagger.ApiNotFoundResponse({
+    type: errors.NotFoundException,
+  })
+  @swagger.ApiForbiddenResponse({
+    type: errors.ForbiddenException,
+  })
+  async FixOrderModuleImports(
+    @common.Body()
+    body: string
+  ): Promise<string> {
+    return this.service.FixOrderModuleImports(body);
+  }
 }

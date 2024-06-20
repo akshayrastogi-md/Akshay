@@ -58,4 +58,13 @@ export class CartServiceBase {
       })
       .user();
   }
+  async FixAuthModuleImports(args: string): Promise<string> {
+    throw new Error("Not implemented");
+  }
+  async FixCartModuleImports(args: string): Promise<string> {
+    throw new Error("Not implemented");
+  }
+  async FixUserModuleImports(args: string): Promise<string> {
+    throw new Error("Not implemented");
+  }
 }
