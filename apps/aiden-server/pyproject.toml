@@ -21,7 +21,8 @@ dependencies = [
     "anthropic (>=0.82.0,<0.83.0)",
     "python-dotenv (>=1.2.1,<2.0.0)",
     "requests (>=2.32.5,<3.0.0)",
-    "email-validator (>=2.3.0,<3.0.0)"
+    "email-validator (>=2.3.0,<3.0.0)",
+    "aiosqlite (>=0.22.1,<0.23.0)"
 ]
 
 

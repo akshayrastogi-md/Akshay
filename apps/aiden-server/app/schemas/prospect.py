@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Dict, Any
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, EmailStr
 
@@ -16,10 +16,16 @@ class ProspectUpdate(ProspectBase):
     email: Optional[EmailStr] = None
     status: Optional[str] = None
     research_summary: Optional[str] = None
+    research_data: Optional[Dict[str, Any]] = None
+    icp_score: Optional[int] = None
 
 class ProspectInDBBase(ProspectBase):
     id: int
     status: str
+    research_summary: Optional[str] = None
+    research_data: Optional[Dict[str, Any]] = None
+    icp_score: Optional[int] = None
+
     created_at: datetime
     updated_at: Optional[datetime] = None
 

@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "password"
     POSTGRES_DB: str = "aiden"
+
+    # Can be sqlite or postgres
     DATABASE_URL: Optional[str] = None
 
     @field_validator("DATABASE_URL", mode="before")
@@ -20,6 +22,7 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return v
 
+        # Fallback to postgres if not provided
         return str(PostgresDsn.build(
             scheme="postgresql+asyncpg",
             username=info.data.get("POSTGRES_USER"),
