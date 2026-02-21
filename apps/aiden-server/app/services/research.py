@@ -1,21 +1,36 @@
 import asyncio
 from typing import Dict, Any, List
 
+from app.services.proxycurl import ProxycurlService
+from app.services.apollo import ApolloService
+from app.services.harvest.search import DuckDuckGoService
+from app.services.harvest.scraper import WebsiteScraper
+
 class ResearchService:
     def __init__(self):
-        # In a real scenario, we might inject API clients here
-        pass
+        # Premium Services
+        self.proxycurl = ProxycurlService()
+        self.apollo = ApolloService()
+
+        # Cheap/Free Services
+        self.ddg = DuckDuckGoService()
+        self.scraper = WebsiteScraper()
 
     async def gather_linkedin_data(self, linkedin_url: str) -> Dict[str, Any]:
         """
-        Simulate gathering data from LinkedIn via Proxycurl or similar.
+        Gather data from LinkedIn via Proxycurl or fallback to mock.
         """
-        # Mock delay
-        await asyncio.sleep(1)
-
         if not linkedin_url:
             return {}
 
+        # Use Real API if Key is present
+        if self.proxycurl.api_key:
+            data = self.proxycurl.get_profile(linkedin_url)
+            if data:
+                return data
+
+        # Fallback Mock
+        await asyncio.sleep(1)
         return {
             "profile_url": linkedin_url,
             "headline": "Founder & CEO at TechStart",
@@ -42,14 +57,22 @@ class ResearchService:
 
     async def gather_company_news(self, company_name: str) -> List[Dict[str, Any]]:
         """
-        Simulate gathering company news via Google News or similar.
+        Strategy:
+        1. Try DuckDuckGo News (Free)
+        2. Fallback to Mock (or other paid APIs in future)
         """
-        # Mock delay
-        await asyncio.sleep(1)
-
         if not company_name:
             return []
 
+        # 1. Try Free Source
+        print(f"Searching news for {company_name} via DDG...")
+        news = self.ddg.find_recent_news(company_name)
+        if news:
+            print(f"Found {len(news)} news items via DDG.")
+            return news
+
+        # 2. Mock Fallback
+        await asyncio.sleep(1)
         return [
             {
                 "title": f"{company_name} raises Series A",
@@ -81,14 +104,41 @@ class ResearchService:
         else:
             return ["HubSpot", "Segment", "GCP", "Vue.js"]
 
-    async def conduct_comprehensive_research(self, prospect_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def waterfall_research(self, prospect_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Orchestrate the research process.
+        Cost-Effective Waterfall Enrichment Strategy:
+        1. Find LinkedIn URL via DDG if missing.
+        2. Scrape Company Website for text (Free).
+        3. Search News via DDG (Free).
+        4. (Optional) Use Paid APIs if critical data missing.
         """
-        linkedin_url = prospect_data.get("linkedin_url")
         company_name = prospect_data.get("company_name")
+        first_name = prospect_data.get("first_name")
+        last_name = prospect_data.get("last_name")
+        website_url = prospect_data.get("website_url") # Assuming this might be passed
 
-        # Run in parallel
+        # 1. Find LinkedIn URL if missing
+        if not prospect_data.get("linkedin_url"):
+            print("LinkedIn URL missing. Searching via DDG...")
+            found_url = self.ddg.find_linkedin_url(f"{first_name} {last_name}", company_name)
+            if found_url:
+                prospect_data["linkedin_url"] = found_url
+                print(f"Found LinkedIn URL: {found_url}")
+
+        # 2. Scrape Website
+        website_text = None
+        if website_url:
+             print(f"Scraping website: {website_url}")
+             website_text = await self.scraper.scrape_text(website_url)
+        elif company_name:
+             # Try to guess or search website (omitted for brevity, assume passed or mocked)
+             pass
+
+        # 3. Parallel Gather (LinkedIn Profile + News + Stack)
+        # Note: LinkedIn gathering uses Proxycurl (Paid) or Mock.
+        # Ideally we would scrape public profile here for free tier, but that's complex to implement reliably.
+        linkedin_url = prospect_data.get("linkedin_url")
+
         linkedin_data, news_data, tech_stack = await asyncio.gather(
             self.gather_linkedin_data(linkedin_url),
             self.gather_company_news(company_name),
@@ -99,5 +149,12 @@ class ResearchService:
             "linkedin": linkedin_data,
             "company_news": news_data,
             "tech_stack": tech_stack,
-            "sources": ["LinkedIn", "Google News", "BuiltWith"]
+            "website_text": website_text,
+            "sources": ["DuckDuckGo", "WebsiteScraper", "Proxycurl" if self.proxycurl.api_key else "Mock"]
         }
+
+    async def conduct_comprehensive_research(self, prospect_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Orchestrate the research process using the waterfall strategy.
+        """
+        return await self.waterfall_research(prospect_data)
