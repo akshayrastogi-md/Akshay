@@ -33,6 +33,10 @@ class Settings(BaseSettings):
 
     REDIS_URL: str = "redis://localhost:6379/0"
 
+    # Milvus (Vector DB)
+    MILVUS_HOST: str = "localhost"
+    MILVUS_PORT: str = "19530"
+
     # AI Services
     ANTHROPIC_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
