@@ -34,6 +34,7 @@ graph TD
 
     subgraph "Knowledge Base"
         VectorService -->|Store/Retrieve| Milvus[(Milvus Vector DB)]
+        LLMService -->|RAG Query| VectorService
     end
 ```
 
@@ -44,7 +45,7 @@ graph TD
 ### Phase 1: Core Foundation
 *   **Prospect Management**: CRUD operations for prospects with status tracking (`NEW`, `RESEARCHED`, `DRAFTED`).
 *   **Async Task Engine**: Robust Celery + Redis setup to handle long-running research jobs.
-*   **LLM Integration**: Mock integration with Anthropic (Claude 3.5) for email generation.
+*   **LLM Integration**: Integration with Anthropic (Claude 3.5) for high-quality email generation.
 
 ### Phase 2: Sequences & Integrations
 *   **Campaigns & Sequences**: Support for multi-step outreach campaigns (`SequenceStep`).
@@ -52,11 +53,12 @@ graph TD
 *   **Resilience**: Global exception handling, structured logging, and task retries with backoff.
 
 ### Phase 3: Intelligence & Cost Optimization
-*   **Waterfall Research**: Cost-effective strategy that prioritizes free sources first:
-    1.  **DuckDuckGo**: Find LinkedIn URLs and Company News.
-    2.  **Web Scraper**: Extract text from company homepages (`httpx` + `BeautifulSoup`).
-    3.  **Premium Fallback**: Only calls paid APIs (Proxycurl/Apollo) if critical data is missing.
-*   **Vector Memory (RAG)**: Integration with **Milvus** to store embeddings of successful emails, enabling "Few-Shot" learning for future drafts.
+*   **Waterfall Research Strategy**:
+    1.  **Level 1 (Free)**: Searches DuckDuckGo for LinkedIn URLs and Company News. Scrapes company homepage text.
+    2.  **Level 2 (Paid Fallback)**: If critical data (like LinkedIn URL) is missing, it falls back to premium APIs (Proxycurl/Apollo) to ensure quality.
+*   **Vector Memory (RAG)**:
+    *   **Milvus Integration**: Stores successful email drafts as vector embeddings.
+    *   **Few-Shot Prompting**: Before writing an email, AIDEN searches Milvus for similar successful examples and feeds them to Claude as context.
 
 ---
 
@@ -65,8 +67,8 @@ graph TD
 *   **Framework**: FastAPI (Python 3.12)
 *   **Database**: PostgreSQL 15 (Async SQLAlchemy + Alembic)
 *   **Task Queue**: Celery + Redis
-*   **Vector DB**: Milvus (Standalone)
-*   **AI/LLM**: Anthropic API
+*   **Vector DB**: Milvus (Standalone) + Sentence Transformers (Local Embeddings)
+*   **AI/LLM**: Anthropic API (Claude 3.5 Sonnet)
 *   **Harvesting**: DuckDuckGo, BeautifulSoup, Proxycurl, Apollo
 
 ---
@@ -79,7 +81,7 @@ graph TD
 *   Poetry (Dependency Manager)
 
 ### Option 1: Local Development (Lightweight)
-Suitable for coding and testing logic without spinning up heavy infrastructure. Uses SQLite.
+Suitable for logic testing. Uses SQLite. *Note: Vector DB features will be mocked or unavailable without Docker.*
 
 1.  **Clone & Install**:
     ```bash
@@ -100,12 +102,12 @@ Suitable for coding and testing logic without spinning up heavy infrastructure. 
     ```
 
 4.  **Start Services**:
-    *   **Redis** (Required for tasks): `docker run -d -p 6379:6379 redis:alpine`
+    *   **Redis** (Required): `docker run -d -p 6379:6379 redis:alpine`
     *   **API Server**: `poetry run uvicorn app.main:app --reload`
     *   **Worker**: `poetry run celery -A app.core.celery_app worker --loglevel=info`
 
 ### Option 2: Full Production Stack (Docker)
-Runs everything (API, Worker, Postgres, Redis, Milvus) in containers.
+Runs everything (API, Worker, Postgres, Redis, Milvus) in containers. **Required for full RAG/Vector capabilities.**
 
 1.  **Update Config**:
     Edit `.env` to point to docker service names:
@@ -129,20 +131,25 @@ Runs everything (API, Worker, Postgres, Redis, Milvus) in containers.
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| **Core** | | |
 | `DATABASE_URL` | DB Connection String | `sqlite+aiosqlite:///./aiden.db` |
 | `REDIS_URL` | Redis Connection | `redis://localhost:6379/0` |
-| `MILVUS_HOST` | Vector DB Host | `localhost` |
-| `MILVUS_PORT` | Vector DB Port | `19530` |
+| `ENVIRONMENT` | Environment (local/prod) | `local` |
+| `SENTRY_DSN` | Sentry Error Tracking | `None` |
+| **AI & Vector** | | |
 | `ANTHROPIC_API_KEY` | Claude 3.5 API Key | `None` |
+| `MILVUS_HOST` | Milvus Host | `localhost` |
+| `MILVUS_PORT` | Milvus Port | `19530` |
+| **Data Harvesting** | | |
 | `APOLLO_API_KEY` | Apollo.io Key | `None` |
 | `PROXYCURL_API_KEY` | Proxycurl (LinkedIn) Key | `None` |
-| `SENTRY_DSN` | Error Tracking DSN | `None` |
+| `NEWS_API_KEY` | Google News API Key | `None` |
 
 ---
 
 ## 🧪 Testing
 
-Run the test suite (requires Redis running locally):
+Run the test suite:
 
 ```bash
 # Install test dependencies
