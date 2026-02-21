@@ -27,7 +27,8 @@ dependencies = [
     "pymilvus (>=2.6.9,<3.0.0)",
     "sentence-transformers (>=5.2.3,<6.0.0)",
     "duckduckgo-search (>=8.1.1,<9.0.0)",
-    "beautifulsoup4 (>=4.14.3,<5.0.0)"
+    "beautifulsoup4 (>=4.14.3,<5.0.0)",
+    "httpx (>=0.28.1,<0.29.0)"
 ]
 
 
