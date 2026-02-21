@@ -1,21 +1,29 @@
 import asyncio
 from typing import Dict, Any, List
 
+from app.services.proxycurl import ProxycurlService
+from app.services.apollo import ApolloService
+
 class ResearchService:
     def __init__(self):
-        # In a real scenario, we might inject API clients here
-        pass
+        self.proxycurl = ProxycurlService()
+        self.apollo = ApolloService()
 
     async def gather_linkedin_data(self, linkedin_url: str) -> Dict[str, Any]:
         """
-        Simulate gathering data from LinkedIn via Proxycurl or similar.
+        Gather data from LinkedIn via Proxycurl or fallback to mock.
         """
-        # Mock delay
-        await asyncio.sleep(1)
-
         if not linkedin_url:
             return {}
 
+        # Use Real API if Key is present
+        if self.proxycurl.api_key:
+            data = self.proxycurl.get_profile(linkedin_url)
+            if data:
+                return data
+
+        # Fallback Mock
+        await asyncio.sleep(1)
         return {
             "profile_url": linkedin_url,
             "headline": "Founder & CEO at TechStart",
