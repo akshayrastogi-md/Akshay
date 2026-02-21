@@ -1,115 +1,162 @@
 # AIDEN Server
 
-AIDEN is the autonomous sales development agent backend. It manages prospect data, conducts automated research, and generates personalized email drafts using LLMs.
+**AIDEN** is an autonomous, AI-powered Sales Development Representative (SDR) agent backend. It automates the entire outbound sales workflow: from deep prospect research and hyper-personalized email drafting to managing multi-touch sequences and learning from successful interactions.
 
-## Features
+---
 
-- **Prospect Management**: CRUD operations for sales prospects.
-- **Automated Research**: Gathers data from LinkedIn, News, and Tech Stack sources (currently mocked).
-- **Email Generation**: Uses Claude 3.5 Sonnet (via Anthropic API) to write personalized cold emails.
-- **Async Processing**: Uses Celery and Redis for background task execution.
-- **Production Ready**: Includes Gunicorn config, Sentry integration, and structured logging.
+## 🏗️ Architecture
 
-## Tech Stack
+AIDEN follows an asynchronous, event-driven architecture designed for scalability and resilience.
 
-- **Framework**: FastAPI (Python 3.12)
-- **Database**: PostgreSQL (Production) / SQLite (Local Dev)
-- **ORM**: SQLAlchemy (Async) + Alembic (Migrations)
-- **Task Queue**: Celery + Redis
-- **AI/LLM**: Anthropic API (Claude 3.5)
+```mermaid
+graph TD
+    User[User / Client] -->|API Request| API[FastAPI Server]
+    API -->|Read/Write| DB[(PostgreSQL)]
+    API -->|Queue Task| Redis[(Redis)]
 
-## Setup & Installation
+    subgraph "Worker Nodes"
+        Worker[Celery Worker] -->|Consume Task| Redis
+        Worker -->|Update Status| DB
+
+        Worker -->|1. Research| ResearchService
+        Worker -->|2. Draft| LLMService
+        Worker -->|3. Learn| VectorService
+    end
+
+    subgraph "External World"
+        ResearchService -->|Free| DDG[DuckDuckGo]
+        ResearchService -->|Free| Web[Website Scraper]
+        ResearchService -->|Paid| Proxycurl[LinkedIn API]
+        ResearchService -->|Paid| Apollo[Apollo.io]
+
+        LLMService -->|Generate| Claude[Anthropic Claude 3.5]
+    end
+
+    subgraph "Knowledge Base"
+        VectorService -->|Store/Retrieve| Milvus[(Milvus Vector DB)]
+    end
+```
+
+---
+
+## 🚀 Features
+
+### Phase 1: Core Foundation
+*   **Prospect Management**: CRUD operations for prospects with status tracking (`NEW`, `RESEARCHED`, `DRAFTED`).
+*   **Async Task Engine**: Robust Celery + Redis setup to handle long-running research jobs.
+*   **LLM Integration**: Mock integration with Anthropic (Claude 3.5) for email generation.
+
+### Phase 2: Sequences & Integrations
+*   **Campaigns & Sequences**: Support for multi-step outreach campaigns (`SequenceStep`).
+*   **Real Data Enrichment**: Integration with **Apollo.io** (enrichment) and **Proxycurl** (LinkedIn scraping).
+*   **Resilience**: Global exception handling, structured logging, and task retries with backoff.
+
+### Phase 3: Intelligence & Cost Optimization
+*   **Waterfall Research**: Cost-effective strategy that prioritizes free sources first:
+    1.  **DuckDuckGo**: Find LinkedIn URLs and Company News.
+    2.  **Web Scraper**: Extract text from company homepages (`httpx` + `BeautifulSoup`).
+    3.  **Premium Fallback**: Only calls paid APIs (Proxycurl/Apollo) if critical data is missing.
+*   **Vector Memory (RAG)**: Integration with **Milvus** to store embeddings of successful emails, enabling "Few-Shot" learning for future drafts.
+
+---
+
+## 🛠️ Tech Stack
+
+*   **Framework**: FastAPI (Python 3.12)
+*   **Database**: PostgreSQL 15 (Async SQLAlchemy + Alembic)
+*   **Task Queue**: Celery + Redis
+*   **Vector DB**: Milvus (Standalone)
+*   **AI/LLM**: Anthropic API
+*   **Harvesting**: DuckDuckGo, BeautifulSoup, Proxycurl, Apollo
+
+---
+
+## ⚡ Setup & Installation
 
 ### Prerequisites
+*   Python 3.12+
+*   Docker & Docker Compose
+*   Poetry (Dependency Manager)
 
-- Python 3.12+
-- Docker & Docker Compose
-- Poetry (Dependency Manager)
+### Option 1: Local Development (Lightweight)
+Suitable for coding and testing logic without spinning up heavy infrastructure. Uses SQLite.
 
-### Local Development (Quick Start)
+1.  **Clone & Install**:
+    ```bash
+    git clone <repo>
+    cd apps/aiden-server
+    poetry install
+    ```
 
-1. **Clone the repository**:
-   ```bash
-   git clone <repo-url>
-   cd apps/aiden-server
-   ```
+2.  **Configure Environment**:
+    ```bash
+    cp .env.example .env
+    # Edit .env: Ensure DATABASE_URL uses sqlite (default)
+    ```
 
-2. **Install Dependencies**:
-   ```bash
-   poetry install
-   ```
+3.  **Run Migrations**:
+    ```bash
+    poetry run alembic upgrade head
+    ```
 
-3. **Configure Environment**:
-   Copy the example environment file:
-   ```bash
-   cp .env.example .env
-   ```
-   *Note: For local dev, `DATABASE_URL` defaults to SQLite to avoid Docker dependency issues.*
+4.  **Start Services**:
+    *   **Redis** (Required for tasks): `docker run -d -p 6379:6379 redis:alpine`
+    *   **API Server**: `poetry run uvicorn app.main:app --reload`
+    *   **Worker**: `poetry run celery -A app.core.celery_app worker --loglevel=info`
 
-4. **Run Migrations**:
-   ```bash
-   poetry run alembic upgrade head
-   ```
+### Option 2: Full Production Stack (Docker)
+Runs everything (API, Worker, Postgres, Redis, Milvus) in containers.
 
-5. **Start the Server**:
-   ```bash
-   poetry run uvicorn app.main:app --reload
-   ```
-   Access API docs at `http://localhost:8000/api/v1/docs`.
+1.  **Update Config**:
+    Edit `.env` to point to docker service names:
+    ```properties
+    DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/aiden
+    REDIS_URL=redis://redis:6379/0
+    MILVUS_HOST=milvus-standalone
+    ```
 
-### Docker Development
+2.  **Build & Run**:
+    ```bash
+    docker-compose up --build -d
+    ```
+    *   API: `http://localhost:8000`
+    *   Docs: `http://localhost:8000/api/v1/docs`
+    *   Milvus: `localhost:19530`
 
-To run the full stack (Postgres, Redis, Worker, API) in Docker:
+---
 
-1. Update `.env` to use Postgres:
-   ```properties
-   DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/aiden
-   REDIS_URL=redis://redis:6379/0
-   ```
-
-2. Build and Run:
-   ```bash
-   docker-compose up --build
-   ```
-
-## API Documentation
-
-Interactive API documentation (Swagger UI) is available at `/api/v1/docs`.
-
-### Key Endpoints
-
-- `GET /api/v1/prospects/`: List all prospects.
-- `POST /api/v1/prospects/`: Create a new prospect.
-- `POST /api/v1/prospects/{id}/research`: Trigger background research task.
-- `POST /api/v1/prospects/{id}/generate-email`: Trigger email draft generation.
-- `GET /api/v1/prospects/{id}/emails`: Get generated drafts.
-
-## Deployment
-
-### Production Settings
-
-- **Server**: Uses Gunicorn with Uvicorn workers (`gunicorn_conf.py`).
-- **Logging**: JSON structured logging configured in `app/core/log_config.py`.
-- **Error Tracking**: Sentry DSN can be provided via `SENTRY_DSN` env var.
-
-### Environment Variables
+## ⚙️ Configuration
 
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `DATABASE_URL` | DB Connection String | `sqlite+aiosqlite:///./aiden.db` |
-| `REDIS_URL` | Redis Connection String | `redis://localhost:6379/0` |
-| `ANTHROPIC_API_KEY` | Key for AI generation | `None` |
-| `SENTRY_DSN` | Sentry DSN for error tracking | `None` |
-| `ENVIRONMENT` | Environment name (local/prod) | `local` |
+| `REDIS_URL` | Redis Connection | `redis://localhost:6379/0` |
+| `MILVUS_HOST` | Vector DB Host | `localhost` |
+| `MILVUS_PORT` | Vector DB Port | `19530` |
+| `ANTHROPIC_API_KEY` | Claude 3.5 API Key | `None` |
+| `APOLLO_API_KEY` | Apollo.io Key | `None` |
+| `PROXYCURL_API_KEY` | Proxycurl (LinkedIn) Key | `None` |
+| `SENTRY_DSN` | Error Tracking DSN | `None` |
 
-## Testing
+---
 
-Run unit tests:
+## 🧪 Testing
+
+Run the test suite (requires Redis running locally):
+
 ```bash
+# Install test dependencies
+poetry install --with dev
+
+# Run tests
 poetry run pytest
 ```
 
-Lint code:
-```bash
-poetry run ruff check .
-```
+---
+
+## 🚀 Deployment
+
+The project includes a production-ready `Dockerfile` and `start.sh` script.
+*   **Web Server**: Uses `Gunicorn` with Uvicorn workers (`gunicorn_conf.py`).
+*   **Migrations**: Automatically runs `alembic upgrade head` on container start.
+*   **Logging**: structured JSON logging configured in `app/core/log_config.py`.
