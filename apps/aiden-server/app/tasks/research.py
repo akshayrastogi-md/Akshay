@@ -1,6 +1,6 @@
 import asyncio
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.exc import OperationalError
 
 from app.core.celery_app import celery_app
 from app.services.research import ResearchService
@@ -27,7 +27,11 @@ async def _research_prospect_async(prospect_id: int):
         }
 
         # Gather data
-        research_data = await research_service.conduct_comprehensive_research(input_data)
+        try:
+            research_data = await research_service.conduct_comprehensive_research(input_data)
+        except Exception as e:
+            # Re-raise to trigger Celery retry
+            raise e
 
         # Update Prospect
         prospect.research_data = research_data
@@ -42,9 +46,16 @@ async def _research_prospect_async(prospect_id: int):
         print(f"Research complete for {prospect.email}. Status updated to RESEARCHED.")
         return prospect.research_data
 
-@celery_app.task
+@celery_app.task(
+    autoretry_for=(Exception, OperationalError),
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_jitter=True,
+    max_retries=3
+)
 def research_prospect(prospect_id: int):
     """
     Research a prospect by ID and update the database.
+    Retries on network/DB errors.
     """
     return asyncio.run(_research_prospect_async(prospect_id))

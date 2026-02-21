@@ -32,7 +32,20 @@ class Settings(BaseSettings):
         ))
 
     REDIS_URL: str = "redis://localhost:6379/0"
+
+    # AI Services
     ANTHROPIC_API_KEY: Optional[str] = None
+    OPENAI_API_KEY: Optional[str] = None
+
+    # Data Providers (Optional for now as we mock them)
+    APOLLO_API_KEY: Optional[str] = None
+    PROXYCURL_API_KEY: Optional[str] = None
+    BUILTWITH_API_KEY: Optional[str] = None
+    NEWS_API_KEY: Optional[str] = None
+
+    # Error Tracking
+    SENTRY_DSN: Optional[str] = None
+    ENVIRONMENT: str = "local"  # local, staging, production
 
     model_config = SettingsConfigDict(
         case_sensitive=True,

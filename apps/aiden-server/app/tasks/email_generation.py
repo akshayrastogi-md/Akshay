@@ -1,5 +1,6 @@
 import asyncio
 from sqlalchemy import select
+from sqlalchemy.exc import OperationalError
 
 from app.core.celery_app import celery_app
 from app.services.llm import LLMService
@@ -23,9 +24,13 @@ async def _generate_email_draft_async(prospect_id: int, template_type: str):
             return None
 
         llm_service = LLMService()
-        # LLMService is synchronous for now, but we run it inside async task.
-        # This blocks the loop, but it's fine for now as we are the only task in this worker process.
-        email_body = llm_service.generate_email_draft(prospect.research_data, template_type)
+
+        try:
+            # LLMService is synchronous for now, but we run it inside async task.
+            email_body = llm_service.generate_email_draft(prospect.research_data, template_type)
+        except Exception as e:
+            # Re-raise to trigger retry
+            raise e
 
         # Create EmailDraft
         draft = EmailDraft(
@@ -46,7 +51,13 @@ async def _generate_email_draft_async(prospect_id: int, template_type: str):
         print(f"Email draft generated for {prospect.email}. ID: {draft.id}")
         return draft.id
 
-@celery_app.task
+@celery_app.task(
+    autoretry_for=(Exception, OperationalError),
+    retry_backoff=True,
+    retry_backoff_max=300,
+    retry_jitter=True,
+    max_retries=3
+)
 def generate_email_draft(prospect_id: int, template_type: str = "AIDA"):
     """
     Generate an email draft for a prospect.
